@@ -1,18 +1,23 @@
 from src.knowledge_base import KnowledgeBase
+from src.inference_engine import InferenceEngine
 
-csv_path = "data/symptoms_dataset.csv"  # path to your dataset
-
-kb = KnowledgeBase(csv_path)
+kb = KnowledgeBase("data/symptoms_dataset.csv")
 kb.load_dataset()
 kb.compute_probabilities()
 
-# Display sample probabilities
-print("\n--- Sample P(Symptom|Disease) ---")
-for disease in kb.get_disease_list()[:3]:
-    print(f"\n{disease}:")
-    for symptom in kb.get_symptom_list()[:5]:
-        print(f"  {symptom}: {kb.get_P_symptom_given_disease(disease, symptom):.3f}")
+engine = InferenceEngine(kb)
 
-# Export matrix to CSV for inspection
-matrix = kb.export_matrix()
-matrix.to_csv("results/P_symptom_given_disease.csv")
+print("\n--- Initial Priors ---")
+for d, p in engine.get_top_diseases(5):
+    print(f"{d}: {p:.4f}")
+
+# Simulate answers
+print("\nUser says: Fever = Yes")
+engine.update_beliefs("fever", 1)
+
+print("\nUser says: Cough = Yes")
+engine.update_beliefs("cough", 1)
+
+print("\n--- Updated Top Diseases ---")
+for d, p in engine.get_top_diseases(5):
+    print(f"{d}: {p:.4f}")
