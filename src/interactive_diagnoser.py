@@ -74,31 +74,54 @@ class InteractiveDiagnoser:
 
     # ---------------------------------------------------
     def run(self):
-        """Main interactive diagnosis loop."""
+        """Main interactive diagnosis loop (supports free-text + questions)."""
         print("\n=== Welcome to the Interactive Diagnoser ===")
         print("Answer with (y)es, (n)o, or (u)nknown to each symptom question.\n")
 
-        # Ask if user wants NLP input
+        # --- STEP 1: Optional NLP input ---
         mode = input("Would you like to describe your symptoms in free text? (y/n): ").strip().lower()
         if mode == 'y':
             text = input("Please describe your symptoms: ")
-            self.user_answers = self.parser.parse_text(text)
-            print("\nParsed symptoms:")
-            for s, v in self.user_answers.items():
+            parsed = self.parser.parse_text(text)
+            print("\n🧠 Parsed symptoms:")
+            for s, v in parsed.items():
                 if v == 1:
-                    print(f" - {s.replace('_',' ')} ✅")
-            # Continue directly to inference without asking one-by-one
-            self.show_top_diseases(top_k=5)
-            final_topk = self.engine.get_top_diseases(5)
-            self.logger.log_session(self.user_answers, final_topk, self.engine, self.confidence_threshold)
-            return
+                    print(f" - {s.replace('_', ' ')} ✅")
 
+            # Validate + update the inference model with NLP results
+            for symptom, value in parsed.items():
+                if value == 1:
+                    valid, violations = self.csp.is_valid_state({**self.user_answers, symptom: value})
+                    if valid:
+                        self.user_answers[symptom] = value
+                        self.engine.update_beliefs(symptom, value)
+                        self.entropy.mark_asked(symptom)
+                    else:
+                        print(f"⚠️ Skipped {symptom} due to constraint conflict: {violations}")
+
+            # Show current top diseases before continuing
+            self.show_top_diseases(top_k=5)
+
+            cont = input("\nWould you like to continue answering more questions? (y/n): ").strip().lower()
+            if cont != 'y':
+                final_topk = self.engine.get_top_diseases(5)
+                session_file = self.logger.log_session(
+                    user_answers=self.user_answers,
+                    final_topk=final_topk,
+                    engine=self.engine,
+                    confidence_threshold=self.confidence_threshold
+                )
+                self.logger.append_summary(final_topk, self.confidence_threshold, session_file)
+                print("Diagnosis complete. Thank you for using the system!")
+                return
+
+        # --- STEP 2: Interactive question loop ---
         for step in range(self.max_questions):
-            # Select next best symptom to ask
             symptom, gain = self.entropy.select_next_symptom()
-            if not symptom:
-                print("No further informative questions. Stopping.")
-                break
+
+            # Skip symptoms already answered via NLP or user input
+            if not symptom or symptom in self.user_answers:
+                continue
 
             print(f"\n[{step+1}/{self.max_questions}] 🔎 Next question (IG={gain:.4f}):")
             response = self.ask_question(symptom)
@@ -108,20 +131,19 @@ class InteractiveDiagnoser:
             if not updated:
                 continue
 
-            # Display current belief state
             self.show_top_diseases(top_k=5)
 
-            # Stopping condition: high confidence
+            # Stopping condition
             top_disease, top_prob = self.engine.get_top_diseases(1)[0]
             if top_prob >= self.confidence_threshold:
                 print(f"✅ Confidence threshold reached ({top_prob*100:.2f}%).")
                 break
 
+        # --- STEP 3: Final summary ---
         print("\n=== Final Diagnostic Report ===")
         self.show_top_diseases(top_k=5)
-        print("Diagnosis complete. Thank you for using the system!")
-        
-        # Log session
+        print("Diagnosis complete. Thank you for using the system!  ")
+
         final_topk = self.engine.get_top_diseases(5)
         session_file = self.logger.log_session(
             user_answers=self.user_answers,

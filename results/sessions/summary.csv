@@ -1,3 +1,6 @@
 timestamp,session_file,top_disease,confidence,threshold
 2025-11-11T17:25:14.778857Z,session_20251111T172514.json,Typhoid,0.958,0.85
 2025-11-11T17:25:42.102623Z,session_20251111T172542.json,Fungal Infection,0.99,0.85
+2025-11-11T18:28:11.462882Z,session_20251111T182811.json,Dengue,0.992,0.85
+2025-11-11T18:28:33.985829Z,session_20251111T182833.json,Varicose Veins,0.999,0.85
+2025-11-11T18:39:46.495647Z,session_20251111T183946.json,Common Cold,0.992,0.85
