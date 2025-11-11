@@ -4,6 +4,7 @@ from src.inference_engine import InferenceEngine
 from src.entropy_engine import EntropyEngine
 from src.csp_module import CSPModule
 from src.logger import SessionLogger
+from src.nlp_parser import SymptomNLPParser
 
 class InteractiveDiagnoser:
     def __init__(self, dataset_path: str, confidence_threshold: float = 0.8, max_questions: int = 20):
@@ -20,10 +21,13 @@ class InteractiveDiagnoser:
         self.entropy = EntropyEngine(self.engine)
 
         print("⚙️ Initializing CSP Module...")
-        self.csp = CSPModule(self.kb, verbose=True)
+        self.csp = CSPModule(self.kb, verbose=False)
 
         print("🗄️  Initializing Session Logger...")
         self.logger = SessionLogger(verbose=True)
+
+        print("📝 Initializing NLP Parser...")
+        self.parser = SymptomNLPParser(self.kb.get_symptom_list(), verbose=False)
 
         self.confidence_threshold = confidence_threshold
         self.max_questions = max_questions
@@ -73,6 +77,21 @@ class InteractiveDiagnoser:
         """Main interactive diagnosis loop."""
         print("\n=== Welcome to the Interactive Diagnoser ===")
         print("Answer with (y)es, (n)o, or (u)nknown to each symptom question.\n")
+
+        # Ask if user wants NLP input
+        mode = input("Would you like to describe your symptoms in free text? (y/n): ").strip().lower()
+        if mode == 'y':
+            text = input("Please describe your symptoms: ")
+            self.user_answers = self.parser.parse_text(text)
+            print("\nParsed symptoms:")
+            for s, v in self.user_answers.items():
+                if v == 1:
+                    print(f" - {s.replace('_',' ')} ✅")
+            # Continue directly to inference without asking one-by-one
+            self.show_top_diseases(top_k=5)
+            final_topk = self.engine.get_top_diseases(5)
+            self.logger.log_session(self.user_answers, final_topk, self.engine, self.confidence_threshold)
+            return
 
         for step in range(self.max_questions):
             # Select next best symptom to ask
