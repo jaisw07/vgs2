@@ -3,6 +3,7 @@ from src.knowledge_base import KnowledgeBase
 from src.inference_engine import InferenceEngine
 from src.entropy_engine import EntropyEngine
 from src.csp_module import CSPModule
+from src.logger import SessionLogger
 
 class InteractiveDiagnoser:
     def __init__(self, dataset_path: str, confidence_threshold: float = 0.8, max_questions: int = 20):
@@ -20,6 +21,9 @@ class InteractiveDiagnoser:
 
         print("⚙️ Initializing CSP Module...")
         self.csp = CSPModule(self.kb, verbose=True)
+
+        print("🗄️  Initializing Session Logger...")
+        self.logger = SessionLogger(verbose=True)
 
         self.confidence_threshold = confidence_threshold
         self.max_questions = max_questions
@@ -97,3 +101,12 @@ class InteractiveDiagnoser:
         print("\n=== Final Diagnostic Report ===")
         self.show_top_diseases(top_k=5)
         print("Diagnosis complete. Thank you for using the system!")
+        
+        # Log session
+        final_topk = self.engine.get_top_diseases(5)
+        self.logger.log_session(
+            user_answers=self.user_answers,
+            final_topk=final_topk,
+            engine=self.engine,
+            confidence_threshold=self.confidence_threshold
+        )
