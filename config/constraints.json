@@ -1,0 +1,13 @@
+{
+  "dependencies": [
+    ["high_fever", "fatigue"],
+    ["chills", "high_fever"]
+  ],
+  "mutual_exclusions": [
+    ["fatigue", "high_fever"]
+  ],
+  "disease_requirements": [
+    ["Hepatitis A", "brittle_nails"],
+    ["Malaria", "chills", "high_fever"]
+  ]
+}

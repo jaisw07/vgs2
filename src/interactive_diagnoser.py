@@ -19,7 +19,7 @@ class InteractiveDiagnoser:
         self.entropy = EntropyEngine(self.engine)
 
         print("⚙️ Initializing CSP Module...")
-        self.csp = CSPModule(self.kb, verbose=False)
+        self.csp = CSPModule(self.kb, verbose=True)
 
         self.confidence_threshold = confidence_threshold
         self.max_questions = max_questions
