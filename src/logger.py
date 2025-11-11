@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import csv
 
 
 class SessionLogger:
@@ -54,3 +55,25 @@ class SessionLogger:
             print(f"🗂️  Session logged to {fname}")
 
         return fname
+    
+    # -------------------------
+    def append_summary(self, final_topk, confidence_threshold, session_file):
+        """Append key session info to results/sessions/summary.csv"""
+        summary_path = os.path.join(self.base_dir, "summary.csv")
+        top_disease, top_prob = final_topk[0]
+        write_header = not os.path.exists(summary_path)
+
+        with open(summary_path, 'a', newline='') as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(["timestamp", "session_file", "top_disease", "confidence", "threshold"])
+            writer.writerow([
+                datetime.utcnow().isoformat() + 'Z',
+                os.path.basename(session_file),
+                top_disease,
+                round(top_prob, 3),
+                confidence_threshold
+            ])
+
+        if self.verbose:
+            print(f"📈 Summary updated: {summary_path}")

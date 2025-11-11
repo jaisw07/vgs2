@@ -104,9 +104,10 @@ class InteractiveDiagnoser:
         
         # Log session
         final_topk = self.engine.get_top_diseases(5)
-        self.logger.log_session(
+        session_file = self.logger.log_session(
             user_answers=self.user_answers,
             final_topk=final_topk,
             engine=self.engine,
             confidence_threshold=self.confidence_threshold
         )
+        self.logger.append_summary(final_topk, self.confidence_threshold, session_file)
