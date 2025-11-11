@@ -6,6 +6,7 @@ if __name__ == "__main__":
     diagnoser = InteractiveDiagnoser("data/symptoms_dataset.csv", confidence_threshold=0.85, max_questions=15)
     csp = diagnoser.csp
     print(csp.symptom_list)
+    print(csp.disease_list)
 
     with open("config/constraints.json") as f:
         rules = json.load(f)

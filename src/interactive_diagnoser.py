@@ -13,6 +13,10 @@ class InteractiveDiagnoser:
         self.kb = KnowledgeBase(dataset_path)
         self.kb.load_dataset()
         self.kb.compute_probabilities()
+        self.nlp_mode = False
+        self.nlp_input_text = None
+        self.nlp_parsed = None
+        self.nlp_skipped = []
 
         print("🧠 Initializing Inference Engine...")
         self.engine = InferenceEngine(self.kb)
@@ -81,12 +85,22 @@ class InteractiveDiagnoser:
         # --- STEP 1: Optional NLP input ---
         mode = input("Would you like to describe your symptoms in free text? (y/n): ").strip().lower()
         if mode == 'y':
+            self.nlp_mode = True
             text = input("Please describe your symptoms: ")
+            self.nlp_input_text = text
             parsed = self.parser.parse_text(text)
+            # ✅ Filter to only include positive (v == 1) symptoms
+            positive_parsed = {s: v for s, v in parsed.items() if v == 1}
+            self.nlp_parsed = positive_parsed
+
             print("\n🧠 Parsed symptoms:")
-            for s, v in parsed.items():
-                if v == 1:
+            if positive_parsed:
+                for s in positive_parsed:
                     print(f" - {s.replace('_', ' ')} ✅")
+            else:
+                print("No clear positive symptoms detected.")
+            
+            skipped_symptoms = []
 
             # Validate + update the inference model with NLP results
             for symptom, value in parsed.items():
@@ -97,7 +111,9 @@ class InteractiveDiagnoser:
                         self.engine.update_beliefs(symptom, value)
                         self.entropy.mark_asked(symptom)
                     else:
+                        skipped_symptoms.append(symptom)
                         print(f"⚠️ Skipped {symptom} due to constraint conflict: {violations}")
+
 
             # Show current top diseases before continuing
             self.show_top_diseases(top_k=5)
@@ -109,9 +125,12 @@ class InteractiveDiagnoser:
                     user_answers=self.user_answers,
                     final_topk=final_topk,
                     engine=self.engine,
-                    confidence_threshold=self.confidence_threshold
+                    confidence_threshold=self.confidence_threshold,
+                    nlp_input_text=text if mode == 'y' else None,
+                    nlp_parsed_symptoms=parsed if mode == 'y' else None,
+                    csp_skipped=skipped_symptoms if mode == 'y' else None
                 )
-                self.logger.append_summary(final_topk, self.confidence_threshold, session_file)
+                self.logger.append_summary(final_topk, self.confidence_threshold, session_file, nlp_used=(mode == 'y'))
                 print("Diagnosis complete. Thank you for using the system!")
                 return
 
@@ -146,9 +165,12 @@ class InteractiveDiagnoser:
 
         final_topk = self.engine.get_top_diseases(5)
         session_file = self.logger.log_session(
-            user_answers=self.user_answers,
-            final_topk=final_topk,
-            engine=self.engine,
-            confidence_threshold=self.confidence_threshold
+        user_answers=self.user_answers,
+        final_topk=final_topk,
+        engine=self.engine,
+        confidence_threshold=self.confidence_threshold,
+        nlp_input_text=self.nlp_input_text if self.nlp_mode else None,
+        nlp_parsed_symptoms=self.nlp_parsed if self.nlp_mode else None,
+        csp_skipped=self.nlp_skipped if self.nlp_mode else None
         )
-        self.logger.append_summary(final_topk, self.confidence_threshold, session_file)
+        self.logger.append_summary(final_topk, self.confidence_threshold, session_file, nlp_used=self.nlp_mode)
