@@ -120,41 +120,52 @@ class CSPModule:
     # In src/csp_module.py
     def check_consistency(self):
         """
-        Analyze all added constraints to detect logical conflicts.
+        Advanced logical consistency check for CSP constraints.
+        Detects:
+        - Direct contradictions (e.g., A->B and A XOR B)
+        - Circular dependencies
+        - Transitive XOR conflicts (A->B->C but A XOR C)
+        - Missing or undefined entities
+        - Redundant constraints (duplicates or implied by others)
         Returns:
             (consistent: bool, issues: List[str])
         """
         issues = []
+        warnings = []
 
-        # Build quick lookups
+        # --- Organize constraints ---
         deps = [(a, b) for (a, rel, b) in self.constraints if rel == "->"]
         xors = [(a, b) for (a, rel, b) in self.constraints if rel == "XOR"]
         requires = [(a, b) for (a, rel, b) in self.constraints if rel == "requires"]
 
-        # 1️⃣ Direct contradictions: A->B and A XOR B
+        # --- 1️⃣ Invalid or missing symbols ---
+        for a, b in deps + xors:
+            for s in (a, b):
+                if s not in self.symptom_list and s not in self.disease_list:
+                    issues.append(f"Undefined entity '{s}' referenced in constraint involving ({a}, {b})")
+
+        for d, s in requires:
+            if s not in self.symptom_list:
+                issues.append(f"Invalid disease requirement: symptom '{s}' not in knowledge base")
+            if d not in self.disease_list:
+                issues.append(f"Invalid disease requirement: disease '{d}' not in knowledge base")
+
+        # --- 2️⃣ Direct contradictions ---
         for (a, b) in deps:
             if (a, b) in xors or (b, a) in xors:
                 issues.append(f"Conflict: dependency {a}->{b} contradicts mutual exclusion {a} XOR {b}")
-
-        # 2️⃣ Circular dependencies: A->B and B->A
         for (a, b) in deps:
             if (b, a) in deps:
                 issues.append(f"Conflict: circular dependency between {a} and {b}")
-
-        # 3️⃣ XOR self-relations
         for (a, b) in xors:
             if a == b:
                 issues.append(f"Invalid XOR: {a} XOR itself")
 
-        # 4️⃣ Disease requirements involving missing symptoms
-        for (disease, symptom) in requires:
-            if symptom not in self.symptom_list:
-                issues.append(f"Invalid requirement: symptom '{symptom}' not in knowledge base")
-
-        # 5️⃣ Indirect contradiction: A->B->C and A XOR C
+        # --- 3️⃣ Build dependency graph ---
         dep_graph = {}
         for (a, b) in deps:
             dep_graph.setdefault(a, set()).add(b)
+
         # Compute transitive closure
         changed = True
         while changed:
@@ -166,20 +177,57 @@ class CSPModule:
                 if not new_targets.issubset(dep_graph[a]):
                     dep_graph[a] |= new_targets
                     changed = True
-        # Now check transitive XOR conflicts
-        for (a, xor_b) in xors:
-            if xor_b in dep_graph.get(a, set()):
-                issues.append(f"Conflict: {a} leads to {xor_b} via dependencies but also XORs with it")
 
-        # ✅ Summary
+        # --- 4️⃣ Indirect XOR contradictions ---
+        for (a, xor_b) in xors:
+            # A->...->XOR_B
+            if xor_b in dep_graph.get(a, set()):
+                issues.append(f"Conflict: {a} leads to {xor_b} transitively via dependencies but also XORs with it")
+            # Symmetric case
+            if a in dep_graph.get(xor_b, set()):
+                issues.append(f"Conflict: {xor_b} leads to {a} transitively via dependencies but also XORs with it")
+
+        # --- 5️⃣ Redundant constraints ---
+        seen = set()
+        for c in self.constraints:
+            if c in seen:
+                warnings.append(f"Redundant duplicate constraint: {c}")
+            seen.add(c)
+        for (a, b) in deps:
+            if b in dep_graph.get(a, set()) and b != a:
+                if (a, b) not in deps:
+                    warnings.append(f"Implied dependency {a}->{b} already exists transitively")
+
+        # --- 6️⃣ Disease requirements consistency ---
+        disease_symptom_map = {}
+        for d, s in requires:
+            disease_symptom_map.setdefault(d, set()).add(s)
+        for d, symptoms in disease_symptom_map.items():
+            # Detect contradictory requirements like XOR among required symptoms
+            for s1, s2 in xors:
+                if s1 in symptoms and s2 in symptoms:
+                    issues.append(f"Conflict: disease '{d}' requires both {s1} and {s2}, but they are mutually exclusive")
+
+        # --- ✅ Summary ---
         consistent = len(issues) == 0
+
+        print("\n=== CSP Consistency Check ===")
+        if consistent:
+            print("✅ All constraints consistent.")
+        else:
+            print("❌ Found inconsistencies:")
+            for i, msg in enumerate(issues, 1):
+                print(f"  {i}. {msg}")
+
+        if warnings:
+            print("\n⚠️ Warnings / Redundancies:")
+            for i, msg in enumerate(warnings, 1):
+                print(f"  {i}. {msg}")
+
+        # Optional: show dependency graph summary
         if self.verbose:
-            print("=== CSP Consistency Check ===")
-            if consistent:
-                print("All constraints consistent.")
-            else:
-                print("Found inconsistencies:")
-                for i, msg in enumerate(issues, 1):
-                    print(f"  {i}. {msg}")
+            print("\n📊 Dependency Graph Summary:")
+            for a, targets in dep_graph.items():
+                print(f"  {a} -> {sorted(list(targets))}")
 
         return consistent, issues

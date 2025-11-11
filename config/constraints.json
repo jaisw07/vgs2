@@ -4,7 +4,7 @@
     ["chills", "high_fever"]
   ],
   "mutual_exclusions": [
-    ["fatigue", "mild_fever"]
+    ["fatigue", "high_fever"]
   ],
   "disease_requirements": [
     ["Hepatitis A", "brittle_nails"],
