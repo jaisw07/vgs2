@@ -116,3 +116,70 @@ class CSPModule:
     # -------------------------
     def list_constraints(self):
         return list(self.constraints)   
+    
+    # In src/csp_module.py
+    def check_consistency(self):
+        """
+        Analyze all added constraints to detect logical conflicts.
+        Returns:
+            (consistent: bool, issues: List[str])
+        """
+        issues = []
+
+        # Build quick lookups
+        deps = [(a, b) for (a, rel, b) in self.constraints if rel == "->"]
+        xors = [(a, b) for (a, rel, b) in self.constraints if rel == "XOR"]
+        requires = [(a, b) for (a, rel, b) in self.constraints if rel == "requires"]
+
+        # 1️⃣ Direct contradictions: A->B and A XOR B
+        for (a, b) in deps:
+            if (a, b) in xors or (b, a) in xors:
+                issues.append(f"Conflict: dependency {a}->{b} contradicts mutual exclusion {a} XOR {b}")
+
+        # 2️⃣ Circular dependencies: A->B and B->A
+        for (a, b) in deps:
+            if (b, a) in deps:
+                issues.append(f"Conflict: circular dependency between {a} and {b}")
+
+        # 3️⃣ XOR self-relations
+        for (a, b) in xors:
+            if a == b:
+                issues.append(f"Invalid XOR: {a} XOR itself")
+
+        # 4️⃣ Disease requirements involving missing symptoms
+        for (disease, symptom) in requires:
+            if symptom not in self.symptom_list:
+                issues.append(f"Invalid requirement: symptom '{symptom}' not in knowledge base")
+
+        # 5️⃣ Indirect contradiction: A->B->C and A XOR C
+        dep_graph = {}
+        for (a, b) in deps:
+            dep_graph.setdefault(a, set()).add(b)
+        # Compute transitive closure
+        changed = True
+        while changed:
+            changed = False
+            for a in list(dep_graph.keys()):
+                new_targets = set()
+                for b in dep_graph[a]:
+                    new_targets |= dep_graph.get(b, set())
+                if not new_targets.issubset(dep_graph[a]):
+                    dep_graph[a] |= new_targets
+                    changed = True
+        # Now check transitive XOR conflicts
+        for (a, xor_b) in xors:
+            if xor_b in dep_graph.get(a, set()):
+                issues.append(f"Conflict: {a} leads to {xor_b} via dependencies but also XORs with it")
+
+        # ✅ Summary
+        consistent = len(issues) == 0
+        if self.verbose:
+            print("=== CSP Consistency Check ===")
+            if consistent:
+                print("All constraints consistent.")
+            else:
+                print("Found inconsistencies:")
+                for i, msg in enumerate(issues, 1):
+                    print(f"  {i}. {msg}")
+
+        return consistent, issues
