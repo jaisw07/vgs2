@@ -164,17 +164,17 @@ class KnowledgeBase:
                     G.add_edge(d1, d2, weight=sim[i][j])
 
         # --- Cluster Detection ---
-        # try:
-        #     # If python-louvain is installed (community_louvain)
-        #     import community as community_louvain
-        #     communities = community_louvain.best_partition(G)
-        # except ImportError:
+        try:
+            # If python-louvain is installed (community_louvain)
+            import community as community_louvain
+            communities = community_louvain.best_partition(G)
+        except ImportError:
             # Fallback: greedy modularity communities
-        comms = nx.algorithms.community.greedy_modularity_communities(G)
-        communities = {}
-        for idx, cluster in enumerate(comms):
-            for node in cluster:
-                communities[node] = idx
+            comms = nx.algorithms.community.greedy_modularity_communities(G)
+            communities = {}
+            for idx, cluster in enumerate(comms):
+                for node in cluster:
+                    communities[node] = idx
 
         # Colors by community id
         unique_ids = sorted(set(communities.values()))
@@ -230,29 +230,60 @@ class KnowledgeBase:
                 if i < j:
                     print(f"{d1:20s} ↔ {d2:20s} : {sim[i][j]:.4f}")
 
-
     def visualize_symptom_cooccurrence(self, threshold=0.5, save_path=None):
         import networkx as nx
         import matplotlib.pyplot as plt
+        import numpy as np
 
-        G = nx.Graph()
-
+        # Compute symptom correlation matrix
         corr = self.df[self.symptoms].corr()
 
+        # Build graph
+        G = nx.Graph()
         for s1 in self.symptoms:
             for s2 in self.symptoms:
                 if s1 < s2 and corr.loc[s1, s2] >= threshold:
                     G.add_edge(s1, s2, weight=corr.loc[s1, s2])
 
-        plt.figure(figsize=(14, 12))
-        nx.draw_networkx(G, with_labels=True, node_size=600, font_size=7)
-        plt.title("Symptom Co-Occurrence Graph")
+        # --- Cluster Detection ---
+        try:
+            import community as community_louvain
+            communities = community_louvain.best_partition(G)
+        except ImportError:
+            comms = nx.algorithms.community.greedy_modularity_communities(G)
+            communities = {}
+            for idx, cluster in enumerate(comms):
+                for node in cluster:
+                    communities[node] = idx
+
+        # Assign colors
+        unique_ids = sorted(set(communities.values()))
+        cmap = plt.cm.get_cmap("tab20", len(unique_ids))
+        node_colors = [cmap(communities[n]) for n in G.nodes()]
+
+        # Smart layout: stronger spacing to reduce overlap
+        pos = nx.spring_layout(G, seed=42, k=1.5, iterations=200)
+
+        plt.figure(figsize=(18, 14))
+        nx.draw_networkx(
+            G, pos,
+            with_labels=True,
+            node_color=node_colors,
+            node_size=900,
+            font_size=9,
+            width=[G[u][v]['weight'] * 2 for u, v in G.edges()],
+            edge_color="#555",
+        )
+
+        plt.title("Symptom Co-Occurrence Graph (Color-Coded by Clusters)")
+        plt.axis("off")
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
             print(f"🤝 Symptom co-occurrence graph saved to {save_path}")
         else:
             plt.show()
+
 
     def visualize(self):
         print("Choose visualization:")
