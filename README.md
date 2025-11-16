@@ -1,14 +1,13 @@
 <div align="center">
-
 ```
-  __      __   _______   _________  ____  ____
- /  \    /  \ /  _____| /   _____/ /   \/   /
- \   \/\/   /|  |  __  |   __  \  |   \  /   |
-  \        / |  | |_ | |  |__|  | |   |\/|   |
-   \__/\  /  \______|  \_______/  \__/  \__/
-        \/
+  ____________   _____________  /\  ________  
+ /  _____/\   \ /   /   _____/ /  \ \_____  \ 
+/   \  ___ \   Y   /\_____  \  \/\/  /  ____/ 
+\    \_\  \ \     / /        \      /       \ 
+ \______  /  \___/ /_______  /      \_______ \
+        \/                 \/               \/
 ```
-# VGS-2: AI-Powered Interactive Diagnoser
+# GVS2: AI-Powered Interactive Diagnoser
 
 **An intelligent diagnostic system that uses Bayesian inference and information theory to conduct a conversation and identify potential diseases from symptoms.**
 
@@ -43,7 +42,7 @@ The project is designed with a modular and decoupled architecture, making it eas
 ```mermaid
 graph TD
     subgraph Frontend
-        A[Browser UI<br>(Next.js/React)]
+        A[Browser UI\n(Next.js/React)]
     end
 
     subgraph Backend
