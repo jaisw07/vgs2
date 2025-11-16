@@ -146,31 +146,92 @@ class KnowledgeBase:
         else:
             plt.show()
 
-    def visualize_disease_similarity(self, threshold=0.45, save_path=None):
+    def visualize_disease_similarity(self, threshold=0.4, save_path=None):
         import networkx as nx
         import matplotlib.pyplot as plt
+        import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
 
+        # Build matrix
         mat = pd.DataFrame(self.P_symptom_given_disease).T
         sim = cosine_similarity(mat.values)
 
+        # Create graph
         G = nx.Graph()
         for i, d1 in enumerate(self.diseases):
             for j, d2 in enumerate(self.diseases):
                 if i < j and sim[i][j] >= threshold:
                     G.add_edge(d1, d2, weight=sim[i][j])
 
-        plt.figure(figsize=(12, 10))
-        nx.draw_networkx(G, with_labels=True, node_size=1000, font_size=9)
-        plt.title("Disease Similarity Graph")
+        # --- Cluster Detection ---
+        # try:
+        #     # If python-louvain is installed (community_louvain)
+        #     import community as community_louvain
+        #     communities = community_louvain.best_partition(G)
+        # except ImportError:
+            # Fallback: greedy modularity communities
+        comms = nx.algorithms.community.greedy_modularity_communities(G)
+        communities = {}
+        for idx, cluster in enumerate(comms):
+            for node in cluster:
+                communities[node] = idx
+
+        # Colors by community id
+        unique_ids = sorted(set(communities.values()))
+        color_map = plt.cm.get_cmap("tab10", len(unique_ids))
+        node_colors = [color_map(communities[n]) for n in G.nodes()]
+
+        # Layout
+        pos = nx.spring_layout(G, seed=42, k=0.5)
+
+        # Plot graph
+        plt.figure(figsize=(14, 12))
+        nx.draw_networkx(
+            G, pos,
+            with_labels=True,
+            node_color=node_colors,
+            node_size=1400,
+            font_size=9,
+            width=[G[u][v]['weight'] * 2 for u, v in G.edges()],
+            edge_color="#555",
+        )
+
+        plt.title("Disease Similarity Graph (Color-Coded by Clusters)")
+        plt.axis("off")
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
-            print(f"🔗 Disease similarity graph saved to {save_path}")
+            print(f"🌈 Disease similarity graph saved to {save_path}")
         else:
             plt.show()
 
-    def visualize_symptom_cooccurrence(self, threshold=0.2, save_path=None):
+    def save_disease_similarity(self, save_path="results/disease_similarity.csv"):
+        from sklearn.metrics.pairwise import cosine_similarity
+        import pandas as pd
+        import os
+
+        # Create results directory if needed
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+        mat = pd.DataFrame(self.P_symptom_given_disease).T
+        sim = cosine_similarity(mat.values)
+
+        # Build DataFrame with diseases as both rows and columns
+        df_sim = pd.DataFrame(sim, index=self.diseases, columns=self.diseases)
+
+        # Save
+        df_sim.to_csv(save_path)
+        print(f"📄 Disease similarity matrix saved to: {save_path}")
+
+        # Optional pretty print
+        print("\n=== Pairwise Similarities (i < j) ===")
+        for i, d1 in enumerate(self.diseases):
+            for j, d2 in enumerate(self.diseases):
+                if i < j:
+                    print(f"{d1:20s} ↔ {d2:20s} : {sim[i][j]:.4f}")
+
+
+    def visualize_symptom_cooccurrence(self, threshold=0.5, save_path=None):
         import networkx as nx
         import matplotlib.pyplot as plt
 
