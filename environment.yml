@@ -1,0 +1,16 @@
+name: vgs2-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - spacy
+  - matplotlib
+  - seaborn
+  - networkx
+  - scikit-learn
+  - python-louvain
+  - fastapi
+  - uvicorn
