@@ -1,4 +1,5 @@
 <div align="center">
+
 ```
   ____________   _____________  /\  ________  
  /  _____/\   \ /   /   _____/ /  \ \_____  \ 
@@ -7,6 +8,7 @@
  \______  /  \___/ /_______  /      \_______ \
         \/                 \/               \/
 ```
+
 # GVS2: AI-Powered Interactive Diagnoser
 
 **An intelligent diagnostic system that uses Bayesian inference and information theory to conduct a conversation and identify potential diseases from symptoms.**
@@ -42,11 +44,11 @@ The project is designed with a modular and decoupled architecture, making it eas
 ```mermaid
 graph TD
     subgraph Frontend
-        A[Browser UI\n(Next.js/React)]
+        A[Browser UI - Next.js/React]
     end
 
     subgraph Backend
-        B[FastAPI Server<br>(main.py)]
+        B[FastAPI Server - main.py]
     end
 
     subgraph Core Logic
