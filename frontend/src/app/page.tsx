@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import HomePage from '../pages/HomePage';
 import AboutPage from '../pages/AboutPage';
-import ContactPage from '../pages/ContactPage';
+// import ContactPage from '../pages/ContactPage';
+import Results from '../pages/ResultsPage';
 import { StartResponse, DescribeResponse, AnswerResponse, DiagnosticHistory } from '../types';
 
 const InteractiveDiagnosticSystem = () => {
@@ -97,7 +98,9 @@ const InteractiveDiagnosticSystem = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to process description');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.detail || `Failed to process description (Status: ${response.status})`;
+        throw new Error(errorMessage);
       }
       
       const data: DescribeResponse = await response.json();
@@ -112,7 +115,8 @@ const InteractiveDiagnosticSystem = () => {
         answer: freeTextInput,
       }]);
     } catch (err) {
-      setError('Failed to process your description. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process your description. Please try again.';
+      setError(errorMessage);
       console.error('Describe error:', err);
     } finally {
       setLoading(false);
@@ -232,7 +236,7 @@ const InteractiveDiagnosticSystem = () => {
         />
       )}
       {currentPage === 'about' && <AboutPage />}
-      {currentPage === 'contact' && <ContactPage />}
+      {currentPage === 'result' && <Results />}
     </div>
   );
 };

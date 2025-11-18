@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Stethoscope, Menu, X, Home, Info, Phone } from 'lucide-react';
+import { Stethoscope, Menu, X, Home, Info, Phone, BarChart3 } from 'lucide-react';
 
 interface NavBarProps {
     currentPage: string;
@@ -46,14 +46,14 @@ const NavBar = ({ currentPage, setCurrentPage }: NavBarProps) => {
                             <span>About</span>
                         </button>
                         <button
-                            onClick={() => setCurrentPage('contact')}
-                            className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-all ${currentPage === 'contact'
+                            onClick={() => setCurrentPage('result')}
+                            className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-all ${currentPage === 'result'
                                     ? 'text-teal-600 bg-teal-50'
                                     : 'text-gray-600 hover:text-teal-600 hover:bg-gray-50'
                                 }`}
                         >
-                            <Phone size={18} />
-                            <span>Contact</span>
+                            <BarChart3 size={18} />
+                            <span>Results</span>
                         </button>
                     </div>
 
@@ -86,6 +86,16 @@ const NavBar = ({ currentPage, setCurrentPage }: NavBarProps) => {
                         >
                             <Info size={18} />
                             <span>About</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setCurrentPage('result');
+                                setMobileMenuOpen(false);
+                            }}
+                            className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-gray-600 hover:bg-teal-50 hover:text-teal-600"
+                        >
+                            <BarChart3 size={18} />
+                            <span>Results</span>
                         </button>
                         <button
                             onClick={() => {
