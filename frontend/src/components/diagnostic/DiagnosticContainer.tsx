@@ -24,6 +24,7 @@ interface DiagnosticContainerProps {
     finishReason: string | null;
     resetSession: () => void;
     history: DiagnosticHistory[];
+    topDiseases: [string, number][];
 }
 
 const DiagnosticContainer = (props: DiagnosticContainerProps) => (
@@ -59,6 +60,9 @@ const DiagnosticContainer = (props: DiagnosticContainerProps) => (
             <FinishedState
                 finishReason={props.finishReason}
                 resetSession={props.resetSession}
+                topDiseases={props.topDiseases}
+                history={props.history}
+                parsedSymptoms={props.parsedSymptoms}
             />
         )}
 

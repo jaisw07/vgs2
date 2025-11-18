@@ -114,6 +114,7 @@ const HomePage = (props: HomePageProps) => (
                             finishReason={props.finishReason}
                             resetSession={props.resetSession}
                             history={props.history}
+                            topDiseases={props.topDiseases}
                         />
                         <div className="lg:col-span-1">
                             <DiseaseProbabilities
