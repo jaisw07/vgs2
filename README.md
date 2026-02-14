@@ -303,8 +303,8 @@ This project has a solid foundation, but there are many ways it could be extende
 This project is developed for educational and research purposes.
 
 ## 👥 Contributors
-
-- **Gaurav & Team** - Initial work and development
+- **Shrey Jaiswal** - Backend and Logic Flow
+- **Gaurav Ghosh** - Frontend development
 
 ## 🙏 Acknowledgments
 
