@@ -1,15 +1,15 @@
 <div align="center">
 
 ```
-  ____________   _____________  /\  ________  
- /  _____/\   \ /   /   _____/ /  \ \_____  \ 
-/   \  ___ \   Y   /\_____  \  \/\/  /  ____/ 
-\    \_\  \ \     / /        \      /       \ 
- \______  /  \___/ /_______  /      \_______ \
-        \/                 \/               \/
+██╗   ██╗ ██████╗ ███████╗██████╗ 
+██║   ██║██╔════╝ ██╔════╝╚════██╗
+██║   ██║██║  ███╗███████╗ █████╔╝
+╚██╗ ██╔╝██║   ██║╚════██║██╔═══╝ 
+ ╚████╔╝ ╚██████╔╝███████║███████╗
+  ╚═══╝   ╚═════╝ ╚══════╝╚══════╝
 ```
 
-# GVS2: AI-Powered Interactive Diagnoser
+# VGS2: AI-Powered Interactive Diagnoser
 
 **An intelligent diagnostic system that uses Bayesian inference and information theory to conduct a conversation and identify potential diseases from symptoms.**
 
