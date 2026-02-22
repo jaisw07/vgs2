@@ -303,8 +303,9 @@ This project has a solid foundation, but there are many ways it could be extende
 This project is developed for educational and research purposes.
 
 ## 👥 Contributors
-- **Shrey Jaiswal** - Backend and Logic Flow
-- **Gaurav Ghosh** - Frontend development
+- **Shrey Jaiswal** - Algorithm Development and Diagnosis Model Building
+- **Gaurav Ghosh** - Backend Development and API Routing
+- **Vanshita Mehta** - Frontend Development
 
 ## 🙏 Acknowledgments
 
